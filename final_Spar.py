@@ -22,11 +22,11 @@ def read_fasta(fastaFile):
 		fastaDict[chrom] = ''.join(fastaDict[chrom])
 	return fastaDict
 
-x = open("/mnt/c/Users/SMG/Desktop/Final/S_cerevisiae.fa")
+x = open("/mnt/c/Users/SMG/Desktop/Sequencing_class/Final/S_paradoxus.fa")
 SparGenomeDict = read_fasta(x)
 output = open("Spar_transcriptome.fa","w")
 
-bedFile_Spar = open("/mnt/c/Users/SMG/Desktop/Final/S_paradoxus_genes.bed")
+bedFile_Spar = open("/mnt/c/Users/SMG/Desktop/Sequencing_class/Final/S_paradoxus_genes.bed")
 for line in bedFile_Spar:
 	line = line.strip().split()
 	if line[0] == 'Spar_1':
@@ -66,55 +66,8 @@ for line in bedFile_Spar:
 		geneName = line[4]
 	else:
 		geneName = line[4][:stop]
-	geneSeq = SparGenomeDict[line[0]][int(line[2]):int(line[3])+1]
+	geneSeq = SparGenomeDict[line[0]][int(line[2]):(int(line[3])+1)]
 	output.write(">%s\n%s\n" % (geneName,geneSeq))
-	
-	
-# Define function to give complementary nucleotides
-def complement(nuc):
-	if nuc == "A":
-		return "T"
-	elif nuc == "C":
-		return "G"
-	elif nuc == "G":
-		return "C"
-	elif nuc == "T":
-		return "A"
 
-def reverse_complement(seq):
-	#first reverse the sequence using a weird python trick
-	revSeq = seq[::-1]
-	#now go through and complement everything
-	revCom = []
-	for pos in revSeq:
-		curComplement = complement(pos)
-		revCom.append(curComplement)
-	#now join the reverse complement back together
-	revComSeq = ''.join(revCom)
-	return revComSeq
-
-	
-def fasta_read(x):
-	names_line_num = []
-	names = []
-	genome = []
-	chromosome_number = 0
-	for i, line in enumerate(x):
-		line = line.strip()
-		genome.append(line)
-		if line.startswith(">"):
-			chromosome_number += 1
-			names_line_num.append(i)
-			chromosome = line[1:]
-			chromosome = chromosome.replace("_"," ")
-			names.append(chromosome)
-
-	names_line_num.append(len(genome))
-	sequences = []
-	for i in range(len(names_line_num)-1):
-		seq = [''.join(genome[names_line_num[i]+1:names_line_num[i+1]])]
-		sequences.extend(seq)
-
-	dictionary = dict(zip(names, sequences))
-	return dictionary
-
+x.close()
+output.close()

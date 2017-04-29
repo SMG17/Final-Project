@@ -22,11 +22,11 @@ def read_fasta(fastaFile):
 		fastaDict[chrom] = ''.join(fastaDict[chrom])
 	return fastaDict
 
-x = open("/mnt/c/Users/SMG/Desktop/Final/S_cerevisiae.fa")
+x = open("/mnt/c/Users/SMG/Desktop/Sequencing_class/Final/S_cerevisiae.fa")
 ScerGenomeDict = read_fasta(x)
 output = open("Scer_transcriptome.fa","w")
 
-bedFileScer = open("/mnt/c/Users/SMG/Desktop/Final/S_cerevisiae_genes.bed")
+bedFileScer = open("/mnt/c/Users/SMG/Desktop/Sequencing_class/Final/S_cerevisiae_genes.bed")
 for line in bedFileScer:
 	line = line.strip().split()
 	if line[0] == 'chrI':
@@ -62,7 +62,7 @@ for line in bedFileScer:
 	if line[0] == 'chrXVI':
                 line.insert(0,16)
 	geneName = line[4]
-	geneSeq = ScerGenomeDict[line[0]][int(line[2]):int(line[3])+1]
+	geneSeq = ScerGenomeDict[line[0]][int(line[2]):(int(line[3])+1)]
 	output.write(">%s\n%s\n" % (geneName, geneSeq))
 	
 # Define function to give complementary nucleotides
