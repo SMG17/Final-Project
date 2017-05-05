@@ -40,14 +40,14 @@ plotMA(res_RNA) #, main="DESeq2", ylim=c(-2,2)
 plotDispEsts(dds_RNA)
 
 # Calculate sum of p-value below 0.05:
-nom_pvalue_nb_RNA <- sum(res_RNA$pvalue < 0.05, na.rm = TRUE) # Should missing values (including NaN) be removed?
+nom_pvalue_nb_RNA <- sum(res_RNA$pvalue < 0.1, na.rm = TRUE) # Should missing values (including NaN) be removed?
 nom_pvalue_nb_RNA
-# 2512
+# 2883; Kristy had 2884
 
 # Calculate sum of adjusted p-values:
-false_discovery_nb_RNA <- sum(res_RNA$padj < 0.05, na.rm = TRUE)
+false_discovery_nb_RNA <- sum(res_RNA$padj < 0.1, na.rm = TRUE)
 false_discovery_nb_RNA
-# 2136
+# 2472; Kristy had 2468
 
 # Use DESeq2 for differential ribosome occupancy (basically number of ribosomes working on mRNA, so measure of degree of protein synthesis):
 # Create a named vector of files to import:
@@ -81,14 +81,14 @@ plotMA(res_Ribo) #, main="DESeq2", ylim=c(-2,2)
 plotDispEsts(dds_Ribo)
 
 # Calculate sum of p-value below 0.05:
-nom_pvalue_nb_Ribo <- sum(res_Ribo$pvalue < 0.05, na.rm = TRUE) # Should missing values (including NaN) be removed?
+nom_pvalue_nb_Ribo <- sum(res_Ribo$pvalue < 0.1, na.rm = TRUE) # Should missing values (including NaN) be removed?
 nom_pvalue_nb_Ribo
-# 883
+# 1179; Kristy has 1178
 
 # Calculate sum of adjusted p-values:
-false_discovery_nb_Ribo <- sum(res_Ribo$padj < 0.05, na.rm = TRUE)
+false_discovery_nb_Ribo <- sum(res_Ribo$padj < 0.1, na.rm = TRUE)
 false_discovery_nb_Ribo
-# 424
+# 556; Kristy has 563
 
 # Use DESeq2 to calculate translational efficiency is the ribosome occupancy (counts from ribosome profiling experiment) normalized by the mRNA abundance (counts from mRNA experiment) (to disentangle whether degree of protein synthesis results from a few ribosomes working on many mRNAs, or a lot of ribosomes working on a few mRNAs):
 files_trans <- c("C:/Users/SMG/Desktop/Sequencing_class/Final/Scer_RNA_output0/abundance.tsv",
@@ -109,7 +109,10 @@ coldata_trans<- data.frame(condition = c("Scer","Scer","Spar","Spar","Scer","Sce
 rownames(coldata_trans) = names(files_trans)
 coldata_trans
 
+# Turn it into a DESeq2 object:
 dds_trans <- DESeqDataSetFromTximport(txdat_trans, colData = coldata_trans, design= ~ assay + condition + assay:condition)
+
+# Run differential expression:
 dds_trans <- DESeq(dds_trans, test="LRT", reduced= ~ assay + condition) # likelihood ratio test = comparing the normal hypothesis to the alternative hypothesis, Ha states that the two expression (or dispersion?) values are different; H0: they are the same, so for to test it against the H0, we need to remove the interaction term.
 
 # Summarize results:
@@ -122,11 +125,11 @@ plotMA(res_trans) #, main="DESeq2", ylim=c(-2,2)
 plotDispEsts(dds_trans)
 
 # Calculate sum of p-value below 0.05:
-nom_pvalue_nb_trans<- sum(res_trans$pvalue < 0.05, na.rm = TRUE) # Should missing values (including NaN) be removed?
+nom_pvalue_nb_trans<- sum(res_trans$pvalue < 0.1, na.rm = TRUE) # Should missing values (including NaN) be removed?
 nom_pvalue_nb_trans
-# 827
+# 1188; same as Kristy
 
 # Calculate sum of adjusted p-values:
-false_discovery_nb_trans <- sum(res_trans$padj < 0.05, na.rm = TRUE)
+false_discovery_nb_trans <- sum(res_trans$padj < 0.1, na.rm = TRUE)
 false_discovery_nb_trans
-# 236
+# 332; same as Kristy
