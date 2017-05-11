@@ -3,6 +3,7 @@ library(DESeq2)
 library(GenomeInfoDb)
 library(tximport)
 library(rhdf5)
+library(data.table)
 
 # Use DESeq2 for differential mRNA expression:
 # Create a named vector of files to import:
@@ -28,6 +29,15 @@ dds_RNA <- DESeq(dds_RNA)
 
 # Summarize results:
 res_RNA <- results(dds_RNA)
+res_RNA_FDR10 <- subset(res_RNA, padj < 0.1)
+write.csv(as.data.frame(res_RNA_FDR10[order(res_RNA_FDR10$log2FoldChange),]), file = "C:/Users/SMG/Desktop/Sequencing_class/Final/mRNA_diff_exp_sig.csv")
+
+res_RNA_table <- as.data.table(as.data.frame(res_RNA), keep.rownames="id")
+res_RNA_raw <- res_RNA_table[,.(id,log2FoldChange)]
+write.table(res_RNA_raw, file = "C:/Users/SMG/Desktop/Sequencing_class/Final/mRNA_raw.txt", col.name=FALSE, row.name=FALSE)
+
+res_RNA_sig <- res_RNA_table[padj< 0.1,.(id,log2FoldChange)]
+write.table(res_RNA_sig, file = "C:/Users/SMG/Desktop/Sequencing_class/Final/mRNA_diff_exp_sig.txt", col.name=FALSE, row.name=FALSE)
 
 # A plotMA shows the log2 fold changes attributable to a given variable over the mean of normalized counts. Points will be colored red if the adjusted p-value is less than 0.1. Points which fall out of the window are plotted as open triangles pointing either up or down.
 # An "MA-plot" provides a useful overview for an experiment with a two-group comparison (here the two conditions: WT and SNF2). The log2 fold change (using the mean of the counts for all replicates within WT, and within SNF2) for a particular comparison is plotted on the y-axis and the average of the counts normalized by size factor (by group/condition) is shown on the x-axis ("M" for minus, because a log ratio is equal to log minus log, and "A" for average).
@@ -47,7 +57,8 @@ nom_pvalue_nb_RNA
 # Calculate sum of adjusted p-values:
 false_discovery_nb_RNA <- sum(res_RNA$padj < 0.1, na.rm = TRUE)
 false_discovery_nb_RNA
-# 2472; Kristy had 2468
+# 2472; Kristy had 2469
+
 
 # Use DESeq2 for differential ribosome occupancy (basically number of ribosomes working on mRNA, so measure of degree of protein synthesis):
 # Create a named vector of files to import:
@@ -73,6 +84,8 @@ dds_Ribo <- DESeq(dds_Ribo)
 
 # Summarize results:
 res_Ribo <- results(dds_Ribo)
+res_Ribo_FDR10 <- subset(res_Ribo, padj < 0.1)
+write.csv(as.data.frame(res_Ribo_FDR10[order(res_Ribo_FDR10$log2FoldChange),]), file = "C:/Users/SMG/Desktop/Sequencing_class/Final/Ribo_diff_occup_sig.csv")
 
 # MA-plot:
 plotMA(res_Ribo) #, main="DESeq2", ylim=c(-2,2)
@@ -91,7 +104,7 @@ false_discovery_nb_Ribo
 # 556; Kristy has 563
 
 # Use DESeq2 to calculate translational efficiency is the ribosome occupancy (counts from ribosome profiling experiment) normalized by the mRNA abundance (counts from mRNA experiment) (to disentangle whether degree of protein synthesis results from a few ribosomes working on many mRNAs, or a lot of ribosomes working on a few mRNAs):
-files_trans <- c("C:/Users/SMG/Desktop/Sequencing_class/Final/Scer_RNA_output0/abundance.tsv",
+files_TE <- c("C:/Users/SMG/Desktop/Sequencing_class/Final/Scer_RNA_output0/abundance.tsv",
                  "C:/Users/SMG/Desktop/Sequencing_class/Final/Scer_RNA_output1/abundance.tsv",
                  "C:/Users/SMG/Desktop/Sequencing_class/Final/Spar_RNA_output0/abundance.tsv",
                  "C:/Users/SMG/Desktop/Sequencing_class/Final/Spar_RNA_output1/abundance.tsv",
@@ -99,37 +112,87 @@ files_trans <- c("C:/Users/SMG/Desktop/Sequencing_class/Final/Scer_RNA_output0/a
                  "C:/Users/SMG/Desktop/Sequencing_class/Final/Scer_ribo_output1/abundance.tsv",
                  "C:/Users/SMG/Desktop/Sequencing_class/Final/Spar_ribo_output0/abundance.tsv",
                  "C:/Users/SMG/Desktop/Sequencing_class/Final/Spar_ribo_output1/abundance.tsv")
-names(files_trans) <- c("ScerRNA1","ScerRNA2","SparRNA1","SparRNA2","ScerRibo1","ScerRibo2","SparRibo1","SparRibo2")
+names(files_TE) <- c("ScerRNA1","ScerRNA2","SparRNA1","SparRNA2","ScerRibo1","ScerRibo2","SparRibo1","SparRibo2")
 
 # Read in the Kallisto files using tximport:
-txdat_trans <- tximport(files_trans, type = "kallisto", txOut = TRUE)
+txdat_TE <- tximport(files_TE, type = "kallisto", txOut = TRUE)
 
 # Generate the condition matrix:
-coldata_trans<- data.frame(condition = c("Scer","Scer","Spar","Spar","Scer","Scer","Spar","Spar"), assay = c("RNA","RNA","RNA","RNA","Ribo","Ribo","Ribo","Ribo"))
-rownames(coldata_trans) = names(files_trans)
-coldata_trans
+coldata_TE<- data.frame(condition = c("Scer","Scer","Spar","Spar","Scer","Scer","Spar","Spar"), assay = c("RNA","RNA","RNA","RNA","Ribo","Ribo","Ribo","Ribo"))
+rownames(coldata_TE) = names(files_TE)
+coldata_TE
 
 # Turn it into a DESeq2 object:
-dds_trans <- DESeqDataSetFromTximport(txdat_trans, colData = coldata_trans, design= ~ assay + condition + assay:condition)
+dds_TE <- DESeqDataSetFromTximport(txdat_TE, colData = coldata_TE, design= ~ assay + condition + assay:condition)
 
 # Run differential expression:
-dds_trans <- DESeq(dds_trans, test="LRT", reduced= ~ assay + condition) # likelihood ratio test = comparing the normal hypothesis to the alternative hypothesis, Ha states that the two expression (or dispersion?) values are different; H0: they are the same, so for to test it against the H0, we need to remove the interaction term.
+dds_TE <- DESeq(dds_TE, test="LRT", reduced= ~ assay + condition) # likelihood ratio test = comparing the normal hypothesis to the alternative hypothesis, Ha states that the two expression (or dispersion?) values are different; H0: they are the same, so for to test it against the H0, we need to remove the interaction term.
 
 # Summarize results:
-res_trans <- results(dds_trans)
+res_TE <- results(dds_TE)
+res_TE_FDR10 <- subset(res_TE, padj < 0.1)
+write.csv(as.data.frame(res_TE_FDR10[order(res_TE_FDR10$log2FoldChange),]), file = "C:/Users/SMG/Desktop/Sequencing_class/Final/TE_diff_sig.csv")
+
+res_TE_table <- as.data.table(as.data.frame(res_TE), keep.rownames="id")
+res_TE_raw <- res_TE_table[,.(id,log2FoldChange)]
+write.table(res_TE_raw, file = "C:/Users/SMG/Desktop/Sequencing_class/Final/TE_raw.txt", col.name=FALSE, row.name=FALSE)
+
+res_TE_sig <- res_TE_table[padj< 0.1,.(id,log2FoldChange)]
+write.table(res_TE_sig, file = "C:/Users/SMG/Desktop/Sequencing_class/Final/TE_sig.txt", col.name=FALSE, row.name=FALSE)
 
 # MA-plot:
-plotMA(res_trans) #, main="DESeq2", ylim=c(-2,2)
+plotMA(res_TE) #, main="DESeq2", ylim=c(-2,2)
 
 # Dispersion plot:
-plotDispEsts(dds_trans)
+plotDispEsts(dds_TE)
 
 # Calculate sum of p-value below 0.05:
-nom_pvalue_nb_trans<- sum(res_trans$pvalue < 0.1, na.rm = TRUE) # Should missing values (including NaN) be removed?
-nom_pvalue_nb_trans
+nom_pvalue_nb_TE<- sum(res_TE$pvalue < 0.1, na.rm = TRUE) # Should missing values (including NaN) be removed?
+nom_pvalue_nb_TE
 # 1188; same as Kristy
 
 # Calculate sum of adjusted p-values:
-false_discovery_nb_trans <- sum(res_trans$padj < 0.1, na.rm = TRUE)
-false_discovery_nb_trans
+false_discovery_nb_TE <- sum(res_TE$padj < 0.1, na.rm = TRUE)
+false_discovery_nb_TE
 # 332; same as Kristy
+
+# Scatterplot showing log fold change in mRNA abundance between the species vs. log fold change in translational efficiency.
+plot(res_RNA$log2FoldChange, res_TE$log2FoldChange, main = "Log fold change in mRNA abundance vs. log fold change in translation efficiency", xlab= "Log fold change in mRNA abundance", ylab = "Log fold change in translation efficiency")
+#plot(RNA_raw[,2],TE_raw[,2],main = "Log fold change in mRNA abundance vs. log fold change in translation efficiency", xlab= "Log fold change in mRNA abundance", ylab = "Log fold change in translation efficiency")
+
+# Determining compensatory evolution (mRNA up, TE down, or mRNA down, TE up) and coordinated evolution (mRNA up, TE up, or mRNA down, TE down)
+RNA_raw <- read.table("C:/Users/SMG/Desktop/Sequencing_class/Final/mRNA_raw.txt")
+TE_raw <- read.table("C:/Users/SMG/Desktop/Sequencing_class/Final/TE_raw.txt")
+table <- as.data.table(merge(RNA_raw,TE_raw,by="V1"))
+
+RNAup_TEdown <- length(which(table$V2.x>0&table$V2.y<0))
+RNAup_TEdown
+# 892
+RNAdown_TEup <- length(which(table$V2.x<0&table$V2.y>0))
+RNAdown_TEup
+# 1024
+RNAup_TEup <- length(which(table$V2.x>0&table$V2.y>0))
+RNAup_TEup
+# 1815
+RNAdown_TEdown <- length(which(table$V2.x<0&table$V2.y<0))
+RNAdown_TEdown
+# 1707
+
+RNA_sig <- read.table("C:/Users/SMG/Desktop/Sequencing_class/Final/mRNA_diff_exp_sig.txt")
+TE_sig <- read.table("C:/Users/SMG/Desktop/Sequencing_class/Final/TE_sig.txt")
+table_sig <- as.data.table(merge(RNA_sig,TE_sig,by="V1", all=FALSE))
+table_sig_num <- transform(table_sig, V2.x = as.numeric(V2.x), V2.y = as.numeric(V2.y))
+sapply(table_sig_num, mode)
+
+RNAup_TEdown_sig=length(which(table_sig_num$V2.x>0&table_sig_num$V2.y<0))
+RNAup_TEdown_sig
+# 15
+RNAdown_TEup_sig=length(which(table_sig_num$V2.x<0&table_sig_num$V2.y>0))
+RNAdown_TEup_sig
+# 27
+RNAup_TEup_sig=length(which(table_sig_num$V2.x>0&table_sig_num$V2.y>0))
+RNAup_TEup_sig
+# 169
+RNAdown_TEdown_sig=length(which(table_sig_num$V2.x<0&table_sig_num$V2.y<0))
+RNAdown_TEdown_sig
+# 47
