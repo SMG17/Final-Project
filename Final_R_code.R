@@ -87,6 +87,10 @@ res_Ribo <- results(dds_Ribo)
 res_Ribo_FDR10 <- subset(res_Ribo, padj < 0.1)
 write.csv(as.data.frame(res_Ribo_FDR10[order(res_Ribo_FDR10$log2FoldChange),]), file = "C:/Users/SMG/Desktop/Sequencing_class/Final/Ribo_diff_occup_sig.csv")
 
+res_Ribo_table <- as.data.table(as.data.frame(res_RNA), keep.rownames="id")
+res_Ribo_raw <- res_Ribo_table[,.(id,log2FoldChange)]
+write.table(res_Ribo_raw, file = "C:/Users/SMG/Desktop/Sequencing_class/Final/Ribo_raw.txt", col.name=FALSE, row.name=FALSE)
+
 # MA-plot:
 plotMA(res_Ribo) #, main="DESeq2", ylim=c(-2,2)
 
@@ -157,7 +161,7 @@ false_discovery_nb_TE
 # 332; same as Kristy
 
 # Scatterplot showing log fold change in mRNA abundance between the species vs. log fold change in translational efficiency.
-plot(res_RNA$log2FoldChange, res_TE$log2FoldChange, main = "Log fold change in mRNA abundance vs. log fold change in translation efficiency", xlab= "Log fold change in mRNA abundance", ylab = "Log fold change in translation efficiency")
+plot((res_RNA$log2FoldChange), (res_TE$log2FoldChange), main = "Log fold change in mRNA abundance vs. log fold change in translation efficiency", xlab= "Log fold change in mRNA abundance", ylab = "Log fold change in translation efficiency")
 #plot(RNA_raw[,2],TE_raw[,2],main = "Log fold change in mRNA abundance vs. log fold change in translation efficiency", xlab= "Log fold change in mRNA abundance", ylab = "Log fold change in translation efficiency")
 
 # Determining compensatory evolution (mRNA up, TE down, or mRNA down, TE up) and coordinated evolution (mRNA up, TE up, or mRNA down, TE down)
@@ -167,16 +171,12 @@ table <- as.data.table(merge(RNA_raw,TE_raw,by="V1"))
 
 RNAup_TEdown <- length(which(table$V2.x>0&table$V2.y<0))
 RNAup_TEdown
-# 892
 RNAdown_TEup <- length(which(table$V2.x<0&table$V2.y>0))
 RNAdown_TEup
-# 1024
 RNAup_TEup <- length(which(table$V2.x>0&table$V2.y>0))
 RNAup_TEup
-# 1815
 RNAdown_TEdown <- length(which(table$V2.x<0&table$V2.y<0))
 RNAdown_TEdown
-# 1707
 
 RNA_sig <- read.table("C:/Users/SMG/Desktop/Sequencing_class/Final/mRNA_diff_exp_sig.txt")
 TE_sig <- read.table("C:/Users/SMG/Desktop/Sequencing_class/Final/TE_sig.txt")
@@ -186,13 +186,9 @@ sapply(table_sig_num, mode)
 
 RNAup_TEdown_sig=length(which(table_sig_num$V2.x>0&table_sig_num$V2.y<0))
 RNAup_TEdown_sig
-# 15
 RNAdown_TEup_sig=length(which(table_sig_num$V2.x<0&table_sig_num$V2.y>0))
 RNAdown_TEup_sig
-# 27
 RNAup_TEup_sig=length(which(table_sig_num$V2.x>0&table_sig_num$V2.y>0))
 RNAup_TEup_sig
-# 169
 RNAdown_TEdown_sig=length(which(table_sig_num$V2.x<0&table_sig_num$V2.y<0))
 RNAdown_TEdown_sig
-# 47
